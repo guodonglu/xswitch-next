@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+@layer base {
+  html { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  body { @apply m-0 bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
+  button, input, select, summary { @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500; }
+  button { @apply cursor-pointer disabled:cursor-wait disabled:opacity-50; }
+}
+@layer components {
+  #toasts { @apply fixed inset-x-3 bottom-20 z-50 mx-auto flex max-w-lg flex-col gap-2; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium transition-colors duration-150 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800; }
+  .btn-primary { @apply border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700 dark:border-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-600; }
+  .input { @apply w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900; }
+  .panel { @apply rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900; }
+  .muted { @apply text-zinc-500 dark:text-zinc-400; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0ms !important; } }

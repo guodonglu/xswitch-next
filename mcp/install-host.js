@@ -1,0 +1,208 @@
+#!/usr/bin/env node
+
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { spawnSync } from 'node:child_process';
+
+const HOST_NAME = "com.xswitch.mcp";
+const SCRIPT_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
+const INSTALL_DIRECTORY = process.env.XSWITCH_MCP_INSTALL_DIR || path.join(os.homedir(), ".xswitch");
+const RUNTIME_DIRECTORY = path.join(INSTALL_DIRECTORY, "runtime");
+const NATIVE_HOST_SCRIPT = path.join(RUNTIME_DIRECTORY, "native-host.js");
+const MCP_SERVER_SCRIPT = path.join(RUNTIME_DIRECTORY, "server.js");
+
+function parseArgs(argv) {
+  const options = {
+    browser: "chrome",
+    extensionId: undefined,
+    userDataDir: undefined,
+    uninstall: false,
+    noRegister: false,
+  };
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "install") continue;
+    if (arg === "uninstall") options.uninstall = true;
+    else if (arg === "--browser") options.browser = argv[++index];
+    else if (arg === "--extension-id") options.extensionId = argv[++index];
+    else if (arg === "--user-data-dir") options.userDataDir = argv[++index];
+    else if (arg.startsWith("--user-data-dir=")) {
+      options.userDataDir = arg.slice("--user-data-dir=".length);
+    } else if (arg === "--uninstall") options.uninstall = true;
+    else if (arg === '--no-register') options.noRegister = true;
+    else if (arg === "--help" || arg === "-h") {
+      console.log(`Usage: xswitch-mcp install [options]
+
+Options:
+  --browser chrome|chromium|edge  Browser to register (default: chrome)
+  --extension-id <id>            Installed extension ID (required for install)
+  --user-data-dir <path>         Custom browser --user-data-dir
+  --uninstall                    Remove the native host registration
+  --no-register                  Generate files only (Windows testing)
+
+Examples:
+  npx --yes xswitch-mcp install --extension-id <extension-id>
+  npx --yes xswitch-mcp install --extension-id <extension-id> --user-data-dir <path>
+  npx --yes xswitch-mcp uninstall`);
+      process.exit(0);
+    } else throw new Error(`Unknown argument: ${arg}`);
+  }
+  if (!['chrome', 'chromium', 'edge'].includes(options.browser)) {
+    throw new Error(`Unsupported browser: ${options.browser}`);
+  }
+  if (!options.extensionId && !options.uninstall) {
+    throw new Error("--extension-id is required for install");
+  }
+  if (options.extensionId && !/^[a-p]{32}$/.test(options.extensionId)) {
+    throw new Error("extension-id must be a 32-character Chrome extension ID");
+  }
+  if (options.userDataDir !== undefined && !options.userDataDir) {
+    throw new Error("--user-data-dir requires a non-empty path");
+  }
+  return options;
+}
+
+function manifestLocation(browser, userDataDir) {
+  if (process.env.XSWITCH_MCP_MANIFEST_PATH) {
+    return path.resolve(process.env.XSWITCH_MCP_MANIFEST_PATH);
+  }
+  const customUserDataDirectory =
+    userDataDir || process.env.XSWITCH_MCP_USER_DATA_DIR;
+  if (customUserDataDirectory) {
+    return path.join(
+      path.resolve(customUserDataDirectory),
+      "NativeMessagingHosts",
+      `${HOST_NAME}.json`
+    );
+  }
+  if (process.platform === "darwin") {
+    const folders = {
+      chrome: "Google/Chrome",
+      chromium: "Chromium",
+      edge: "Microsoft Edge",
+    };
+    return path.join(
+      os.homedir(),
+      "Library/Application Support",
+      folders[browser],
+      "NativeMessagingHosts",
+      `${HOST_NAME}.json`
+    );
+  }
+  if (process.platform === "linux") {
+    const folders = {
+      chrome: "google-chrome",
+      chromium: "chromium",
+      edge: "microsoft-edge",
+    };
+    return path.join(
+      os.homedir(),
+      ".config",
+      folders[browser],
+      "NativeMessagingHosts",
+      `${HOST_NAME}.json`
+    );
+  }
+  if (process.platform === 'win32') return path.join(INSTALL_DIRECTORY, `${HOST_NAME}.${browser}.json`);
+  throw new Error(
+    `The native-host installer currently supports macOS and Linux, not ${process.platform}`
+  );
+}
+
+function shellQuote(value) {
+  return `'${value.replaceAll("'", `'"'"'`)}'`;
+}
+
+function createLauncher() {
+  fs.mkdirSync(INSTALL_DIRECTORY, { recursive: true, mode: 0o700 });
+  fs.chmodSync(INSTALL_DIRECTORY, 0o700);
+  const launcher = path.join(INSTALL_DIRECTORY, process.platform === 'win32' ? 'native-host.cmd' : 'native-host');
+  if (process.platform === 'win32') {
+    const quote = (value) => `"${value.replaceAll('%', '%%')}"`;
+    fs.writeFileSync(launcher, `@echo off\r\nsetlocal DisableDelayedExpansion\r\n${quote(process.execPath)} ${quote(NATIVE_HOST_SCRIPT)}\r\n`, 'utf8');
+    return launcher;
+  }
+  fs.writeFileSync(
+    launcher,
+    `#!/bin/sh\nexec ${shellQuote(process.execPath)} ${shellQuote(NATIVE_HOST_SCRIPT)}\n`,
+    { encoding: "utf8", mode: 0o700 }
+  );
+  fs.chmodSync(launcher, 0o700);
+  return launcher;
+}
+
+function installRuntime() {
+  const bundledDirectory = path.join(SCRIPT_DIRECTORY, "dist");
+  const runtimeFiles = ["native-host.js", "server.js"];
+  for (const file of runtimeFiles) {
+    if (!fs.existsSync(path.join(bundledDirectory, file))) {
+      throw new Error(
+        `Missing bundled runtime: ${file}. Run "npm --prefix mcp run build" before installing.`
+      );
+    }
+  }
+
+  fs.mkdirSync(RUNTIME_DIRECTORY, { recursive: true, mode: 0o700 });
+  fs.chmodSync(RUNTIME_DIRECTORY, 0o700);
+  for (const file of runtimeFiles) {
+    const target = path.join(RUNTIME_DIRECTORY, file);
+    fs.copyFileSync(path.join(bundledDirectory, file), target);
+    fs.chmodSync(target, 0o600);
+  }
+}
+
+const options = parseArgs(process.argv.slice(2));
+const manifestPath = manifestLocation(options.browser, options.userDataDir);
+
+function registerWindows(remove = false) {
+  if (process.platform !== 'win32' || options.noRegister) return;
+  const vendors = { chrome: 'Google\\Chrome', chromium: 'Chromium', edge: 'Microsoft\\Edge' };
+  const key = `HKCU\\Software\\${vendors[options.browser]}\\NativeMessagingHosts\\${HOST_NAME}`;
+  if (remove) {
+    const current = spawnSync('reg.exe', ['query', key, '/ve'], { encoding: 'utf8', windowsHide: true });
+    if (current.status !== 0 || !current.stdout.toLowerCase().includes(manifestPath.toLowerCase())) return;
+  }
+  const result = spawnSync('reg.exe', remove ? ['delete', key, '/ve', '/f'] : ['add', key, '/ve', '/t', 'REG_SZ', '/d', manifestPath, '/f'], { encoding: 'utf8', windowsHide: true });
+  if (result.status !== 0) throw new Error(`Native host registry update failed: ${result.stderr || result.stdout}`);
+}
+
+if (options.uninstall) {
+  registerWindows(true);
+  if (fs.existsSync(manifestPath)) fs.unlinkSync(manifestPath);
+  console.log(`Removed XSwitch native host for ${options.browser}.`);
+  process.exit(0);
+}
+
+installRuntime();
+const launcher = createLauncher();
+const manifest = {
+  name: HOST_NAME,
+  description: "Secure local bridge between XSwitch and its MCP server",
+  path: launcher,
+  type: "stdio",
+  allowed_origins: [`chrome-extension://${options.extensionId}/`],
+};
+fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+registerWindows();
+
+console.log(`Installed XSwitch native host for ${options.browser}:`);
+console.log(`  ${manifestPath}`);
+console.log("\nMCP client configuration:");
+console.log(
+  JSON.stringify(
+    {
+      mcpServers: {
+        xswitch: {
+          command: process.execPath,
+          args: [MCP_SERVER_SCRIPT],
+        },
+      },
+    },
+    null,
+    2
+  )
+);
+console.log("\nThe native bridge is ready. Add the configuration above to the current AI client, then verify the XSwitch MCP tools.");

@@ -1,0 +1,41 @@
+{
+  "name": "xswitch-next",
+  "version": "3.0.0",
+  "description": "Lightweight request redirects for developers and AI agents",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "build:only": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src mcp e2e __tests__ *.js *.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "mcp:start": "node mcp/server.js",
+    "mcp:install-host": "npm --prefix mcp run build && node mcp/install-host.js",
+    "test:e2e": "playwright test",
+    "build:mcp": "npm --prefix mcp run build"
+  },
+  "repository": "https://github.com/guodonglu/xswitch-next.git",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "jsonc-parser": "^3.3.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.7.1",
+    "@eslint/js": "^9.0.0",
+    "@playwright/test": "^1.63.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/chrome": "^0.2.2",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.64.0",
+    "vite": "^7.1.0",
+    "vitest": "^4.1.10"
+  }
+}
