@@ -137,14 +137,12 @@ export function normalizePastedGroup(raw, customName) {
   const parsed = parseImport(normalized);
   const rules = parsed.config.groups.flatMap((g) => g.rules);
   const name = customName?.trim() || parsed.config.groups[0]?.name || '新建规则组';
+  const group = createGroup(name);
+  group.rules = rules;
   return JSON.stringify({
     format: 'xswitch-next-group',
     version: 1,
-    group: {
-      name,
-      enabled: true,
-      rules,
-    },
+    group,
   });
 }
 
