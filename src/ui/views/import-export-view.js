@@ -21,7 +21,7 @@ export function importExportView(ctx) {
         groupId: mode === 'merge' ? ctx.ui.importGroupId : undefined, expectedRevision: p.revision }, false);
       ctx.ui.importPreview = null; ctx.ui.importGroupId = null; ctx.toast({ message: '配置已导入并生效' }); ctx.render();
     });
-    view.append(el('section', { class: 'panel space-y-3 border-indigo-300 p-4 dark:border-indigo-800', 'aria-label': '导入预览' },
+    view.append(el('section', { class: 'panel space-y-3 border-primary/50 p-4 shadow-md', 'aria-label': '导入预览' },
       el('h3', { class: 'text-sm font-semibold' }, '即将导入'),
       el('p', { class: 'text-xs leading-6' }, `${p.summary.groups} 个规则组 · ${p.summary.redirects} 条转发规则 · ${p.summary.cors} 条跨域规则`),
       el('p', { class: 'muted text-xs' }, `${p.summary.conflicts} 条重复规则`), field('冲突处理', strategy),
@@ -36,7 +36,7 @@ export function importExportView(ctx) {
       button('导出原版 JSON 映射', () => ctx.guard(() => exportFile('xswitch-map', { legacy: true, envelope: false }))))));
   const backups = el('section', { class: 'panel space-y-3 p-4' }, el('h2', { class: 'text-sm font-semibold' }, '备份与恢复'));
   if (!ctx.state.backups.length) backups.append(el('p', { class: 'muted text-xs' }, '修改规则后会自动创建备份。'));
-  for (const backup of ctx.state.backups) backups.append(el('div', { class: 'flex items-center justify-between gap-2 border-b border-zinc-100 pb-2 dark:border-zinc-800' },
+  for (const backup of ctx.state.backups) backups.append(el('div', { class: 'flex items-center justify-between gap-2 border-b border-border pb-2' },
     el('p', { class: 'muted text-[11px] leading-5' }, new Date(backup.timestamp).toLocaleString(), el('span', { class: 'block' }, `${backup.groupCount} 个规则组 · ${backup.source === 'agent' ? 'AI Agent' : '本地操作'}`)),
     button('恢复', () => ctx.guard(async () => {
       if (await dialog({ title: '恢复备份', message: '恢复该时间点的配置。当前状态也会备份。', confirmLabel: '恢复' })) await ctx.change('BACKUP_RESTORE', { backupId: backup.id });
@@ -44,6 +44,6 @@ export function importExportView(ctx) {
   backups.append(button('导出迁移前原始数据', () => ctx.guard(async () => downloadJson('xswitch-before-migration', await ctx.request('LEGACY_SNAPSHOT_EXPORT')))));
   view.append(backups, button('清除所有规则', () => ctx.guard(async () => {
     if (await dialog({ title: '清除所有规则', message: '这会删除全部规则组及规则。可通过备份恢复。', confirmLabel: '清除', danger: true })) await ctx.change('CONFIG_CLEAR', {});
-  }), 'text-red-600'));
+  }), 'border-error/40 text-error hover:bg-error/10'));
   return view;
 }

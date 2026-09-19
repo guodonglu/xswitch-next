@@ -73,3 +73,78 @@ export function exportConfig(config, { scope = 'all', id, legacy = false, envelo
   if (scope !== 'all') throw new Error('未知导出范围');
   return { format: 'xswitch-next', version: 1, exportedAt: new Date().toISOString(), config: structuredClone(config) };
 }
+
+export function normalizePastedInput(raw) {
+  if (typeof raw !== 'string') return raw;
+  const trimmed = raw.trim();
+  if (!trimmed) throw new Error('粘贴内容为空');
+
+  let parsed;
+  try {
+    parsed = parseLegacyJson(trimmed, '粘贴内容');
+  } catch (err) {
+    const lines = trimmed.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 2 && (lines[0].startsWith('http') || lines[0].includes('/'))) {
+      return JSON.stringify({ proxy: [[lines[0], lines[1]]] });
+    }
+    throw err;
+  }
+
+  if (Array.isArray(parsed) && parsed.length === 2 && typeof parsed[0] === 'string' && typeof parsed[1] === 'string') {
+    return JSON.stringify({ proxy: [parsed] });
+  }
+
+  if (Array.isArray(parsed) && parsed.length > 0 && parsed.every((item) => Array.isArray(item) && item.length === 2 && typeof item[0] === 'string' && typeof item[1] === 'string')) {
+    return JSON.stringify({ proxy: parsed });
+  }
+
+  if (typeof parsed === 'string' && parsed.length > 0 && !parsed.includes('\n')) {
+    return JSON.stringify({ cors: [parsed] });
+  }
+
+  if (Array.isArray(parsed) && parsed.length > 0 && parsed.every((item) => typeof item === 'string')) {
+    return JSON.stringify({ cors: parsed });
+  }
+
+  return trimmed;
+}
+
+export function inspectPastedInput(raw) {
+  try {
+    const normalized = normalizePastedInput(raw);
+    const parsed = parseImport(normalized);
+    const rules = parsed.config.groups.flatMap((g) => g.rules);
+    const redirects = rules.filter((r) => r.type === 'redirect').length;
+    const cors = rules.filter((r) => r.type === 'cors').length;
+    const firstGroup = parsed.config.groups[0];
+    const groupName = firstGroup?.name && firstGroup.name !== '默认规则' && firstGroup.name !== '导入的规则' ? firstGroup.name : '';
+    return {
+      valid: true,
+      normalized,
+      count: rules.length,
+      redirects,
+      cors,
+      groupName,
+      summary: `${rules.length} 条规则（${redirects} 条转发，${cors} 条跨域）`,
+    };
+  } catch (error) {
+    return { valid: false, error: error.message };
+  }
+}
+
+export function normalizePastedGroup(raw, customName) {
+  const normalized = normalizePastedInput(raw);
+  const parsed = parseImport(normalized);
+  const rules = parsed.config.groups.flatMap((g) => g.rules);
+  const name = customName?.trim() || parsed.config.groups[0]?.name || '新建规则组';
+  return JSON.stringify({
+    format: 'xswitch-next-group',
+    version: 1,
+    group: {
+      name,
+      enabled: true,
+      rules,
+    },
+  });
+}
+

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig, createRule } from '../src/core/config-model.js';
-import { parseImport, detectImportFormat, previewImport, mergeImport, exportConfig } from '../src/core/import-format.js';
+import { parseImport, detectImportFormat, previewImport, mergeImport, exportConfig, normalizePastedInput, inspectPastedInput, normalizePastedGroup } from '../src/core/import-format.js';
+import { ruleToLegacyJson, groupToLegacyJson } from '../src/core/legacy-xswitch-adapter.js';
 import { serviceHarness } from './helpers/service-harness';
 function sample() {
   const config = createConfig(); config.groups[0].rules.push(createRule('redirect', { source: 'a.com/app.js', destination: 'http://localhost/app.js' })); return config;
@@ -46,4 +47,64 @@ describe('import / export formats and conflicts', () => {
     const result = await h.service.execute('CONFIG_IMPORT', { input, mode: 'overwrite', expectedRevision: preview.revision });
     expect(result.applied).toBe(true); expect(h.document().history[0].source).toBe('import'); expect(h.rules()).toHaveLength(1);
   });
+
+  describe('clipboard copy and paste normalization', () => {
+    it('copies a single redirect rule as original XSwitch JSON', () => {
+      const rule = createRule('redirect', { source: 'example.com/app.js', destination: 'http://localhost/app.js' });
+      const json = ruleToLegacyJson(rule);
+      expect(json).toHaveProperty('proxy');
+      expect(json.proxy).toEqual([['^.*example\\.com/app\\.js.*$', 'http://localhost/app.js']]);
+    });
+
+    it('copies a single CORS rule as original XSwitch JSON', () => {
+      const rule = createRule('cors', { source: 'api.example.com' });
+      const json = ruleToLegacyJson(rule);
+      expect(json).toEqual({ cors: ['api.example.com'] });
+    });
+
+    it('copies a rule group as original XSwitch JSON', () => {
+      const config = sample();
+      config.groups[0].rules.push(createRule('cors', { source: 'cdn.com' }));
+      const json = groupToLegacyJson(config.groups[0]);
+      expect(json.proxy).toHaveLength(1);
+      expect(json.cors).toEqual(['cdn.com']);
+    });
+
+    it('normalizes single rule array [source, destination]', () => {
+      const raw = '["https://a.com/test.js", "http://localhost:3000/test.js"]';
+      const normalized = normalizePastedInput(raw);
+      expect(JSON.parse(normalized)).toEqual({
+        proxy: [['https://a.com/test.js', 'http://localhost:3000/test.js']],
+      });
+      const inspection = inspectPastedInput(raw);
+      expect(inspection.valid).toBe(true);
+      expect(inspection.count).toBe(1);
+      expect(inspection.redirects).toBe(1);
+    });
+
+    it('normalizes array of rule arrays [[a, b], [c, d]]', () => {
+      const raw = '[["a", "b"], ["c", "d"]]';
+      const normalized = normalizePastedInput(raw);
+      expect(JSON.parse(normalized)).toEqual({ proxy: [['a', 'b'], ['c', 'd']] });
+      const inspection = inspectPastedInput(raw);
+      expect(inspection.valid).toBe(true);
+      expect(inspection.count).toBe(2);
+    });
+
+    it('normalizes JSONC with comments and trailing commas', () => {
+      const raw = `{\n  // 注释\n  "proxy": [\n    ["a", "b"],\n  ]\n}`;
+      const inspection = inspectPastedInput(raw);
+      expect(inspection.valid).toBe(true);
+      expect(inspection.count).toBe(1);
+    });
+
+    it('packages rules into a new group with custom name', () => {
+      const raw = '["https://a.com/1.js", "http://localhost/1.js"]';
+      const groupPayload = JSON.parse(normalizePastedGroup(raw, '本地联调'));
+      expect(groupPayload.format).toBe('xswitch-next-group');
+      expect(groupPayload.group.name).toBe('本地联调');
+      expect(groupPayload.group.rules).toHaveLength(1);
+    });
+  });
 });
+

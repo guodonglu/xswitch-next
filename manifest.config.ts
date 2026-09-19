@@ -12,13 +12,25 @@ export default defineManifest({
     "A tool for redirecting URLs and allowing CORS to make the local development experience easy and happy.",
   version: pkg.version,
   icons: {
-    "48": "images/grey_128.png",
-    "128": "images/grey_128.png",
+    "16": "images/icon_16.png",
+    "32": "images/icon_32.png",
+    "48": "images/icon_48.png",
+    "128": "images/icon_128.png",
   },
   action: {
-    default_icon: "images/grey_128.png",
+    default_icon: {
+      "16": "images/icon_16.png",
+      "32": "images/icon_32.png",
+      "48": "images/icon_48.png",
+    },
     default_title: "XSwitch Next",
   },
+  web_accessible_resources: [
+    {
+      resources: ["images/*"],
+      matches: ["<all_urls>"],
+    },
+  ],
   options_page: "src/pages/sidepanel/index.html",
   side_panel: { default_path: "src/pages/sidepanel/index.html" },
   background: {
@@ -32,6 +44,8 @@ export default defineManifest({
     "webRequest",
     "declarativeNetRequest",
     "nativeMessaging",
+    "clipboardRead",
+    "clipboardWrite",
   ],
   host_permissions: ["<all_urls>"],
   commands: {

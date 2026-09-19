@@ -7,7 +7,7 @@ import { previewImport, mergeImport, exportConfig } from '../core/import-format.
 export const STATE_KEY = 'xswitchNextState';
 export const LEGACY_SNAPSHOT_KEY = 'xswitchNextLegacySnapshot';
 const clone = (value) => structuredClone(value);
-const defaultPreferences = { theme: 'system', mcpEnabled: true, enableOnStartup: false };
+const defaultPreferences = { theme: 'light', mcpEnabled: true, enableOnStartup: false };
 const legacyEnabled = (value) => value !== 'disabled';
 
 export function migrateLegacy(raw) {

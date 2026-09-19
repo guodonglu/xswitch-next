@@ -19,18 +19,18 @@ export function agentView(ctx) {
   const copy = () => ctx.guard(async () => { await navigator.clipboard.writeText(setupPrompt(chrome.runtime.id)); ctx.toast({ message: '配置指令已复制' }); });
   const view = el('div', { class: 'space-y-4' },
     el('section', { class: 'panel space-y-3 p-4' }, el('h2', { class: 'text-sm font-semibold' }, '连接 AI Agent'),
-      el('p', { class: `text-xs ${agent.connected ? 'text-emerald-600 dark:text-emerald-400' : 'muted'}` }, agent.connected ? '● MCP 已连接' : '○ MCP 未连接'),
+      el('p', { class: `text-xs ${agent.connected ? 'font-medium text-success' : 'muted'}` }, agent.connected ? '● MCP 已连接' : '○ MCP 未连接'),
       el('p', { class: 'muted text-xs leading-6' }, '1. 复制配置指令\n2. 粘贴到 Codex / Claude Code / Qoder\n3. 让 Agent 完成安装与连接'),
       el('div', { class: 'flex flex-wrap gap-2' }, button('复制 Agent 配置 Prompt', copy, 'btn-primary'),
         button('重新连接', () => ctx.guard(async () => { await ctx.request('AGENT_RECONNECT'); ctx.toast({ message: '正在重新连接本机服务' }); }))),
-      agent.lastError && el('p', { class: 'break-words text-xs leading-5 text-amber-700 dark:text-amber-400' }, '本机桥接尚未就绪，请通过上方配置指令完成安装。')));
+      agent.lastError && el('p', { class: 'break-words text-xs leading-5 text-warning' }, '本机桥接尚未就绪，请通过上方配置指令完成安装。')));
   const history = el('section', { class: 'space-y-3' }, el('div', { class: 'flex items-center justify-between gap-2' },
     el('h2', { class: 'text-sm font-semibold' }, '最近操作'), button('撤销上一次 AI 修改', () => ctx.guard(async () => {
       if (await dialog({ title: '撤销 AI 修改', message: '恢复至最近一次 AI 修改前的完整配置；该时间点之后的其他修改也会撤销。当前状态会备份。', confirmLabel: '恢复' })) await ctx.change('BACKUP_RESTORE', { agentOnly: true });
     }))));
   if (!ctx.state.history.length) history.append(el('p', { class: 'muted py-8 text-center text-xs' }, '还没有操作记录。'));
   for (const operation of ctx.state.history) history.append(el('article', { class: 'panel space-y-1.5 p-3' },
-    el('div', { class: 'flex items-center justify-between gap-2 text-[10px]' }, el('span', { class: 'text-indigo-600 dark:text-indigo-300' }, operation.source === 'agent' ? 'AI Agent' : operation.source === 'import' ? '配置导入' : '手动操作'),
+    el('div', { class: 'flex items-center justify-between gap-2 text-[10px]' }, el('span', { class: 'font-medium text-primary' }, operation.source === 'agent' ? 'AI Agent' : operation.source === 'import' ? '配置导入' : '手动操作'),
       el('time', { class: 'muted' }, new Date(operation.timestamp).toLocaleString())),
     el('p', { class: 'break-words text-xs' }, actionNames[operation.action] ?? '更新配置', operation.change?.rule ? `：${operation.change.rule}` : operation.change?.group ? `：${operation.change.group}` : ''),
     operation.change?.match && el('p', { class: 'muted break-all font-mono text-[11px] leading-5' }, operation.change.match,

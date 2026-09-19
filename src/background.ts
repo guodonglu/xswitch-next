@@ -11,7 +11,7 @@ async function refresh() {
     setMcpBridgeEnabled(state.preferences.mcpEnabled);
     await chrome.action.setIcon({ path: state.enabled && !state.applyError ? BLUE_ICON_PATH : GREY_ICON_PATH });
     await chrome.action.setBadgeText({ text: state.applyError ? 'ERR' : state.enabled ? String(state.activeRuleCount) : 'OFF' });
-    await chrome.action.setBadgeBackgroundColor({ color: state.applyError ? '#dc2626' : '#4f46e5' });
+    await chrome.action.setBadgeBackgroundColor({ color: state.applyError ? '#dc2626' : '#272b34' });
   } catch (error) { console.error('[XSwitch Next]', error); await chrome.action.setBadgeText({ text: 'ERR' }); }
 }
 configureMcpBridge(async (method, params) => {

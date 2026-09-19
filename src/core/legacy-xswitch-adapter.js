@@ -151,3 +151,44 @@ export function exportLegacyConfig(config, { envelope = false } = {}) {
     ? { type: 'xswitch-rules', version: 1, exportedAt: new Date().toISOString(), items, rules }
     : rules;
 }
+
+export function ruleToLegacyJson(rule) {
+  try {
+    if (rule.type === 'cors') {
+      return { cors: [internalRuleToLegacy(rule)] };
+    }
+    const result = { proxy: [internalRuleToLegacy(rule)] };
+    if (rule.options?.cors) {
+      try {
+        const target = new URL(rule.destination.value);
+        if (target.hostname && !/\$[0-9]|[*^|]/.test(rule.destination.value)) {
+          result.cors = [`${target.host}${target.pathname}${target.search}|`];
+        }
+      } catch {
+        /* ignore invalid URL */
+      }
+    }
+    return result;
+  } catch {
+    return { format: 'xswitch-next-rule', version: 1, rule: structuredClone(rule) };
+  }
+}
+
+export function groupToLegacyJson(group) {
+  try {
+    const result = internalGroupToLegacy(group, { includeDisabled: true });
+    if (result.cors && result.cors.length === 0 && !group.legacy?.fields?.includes('cors')) {
+      delete result.cors;
+    }
+    if (result.proxy && result.proxy.length === 0 && !group.legacy?.fields?.includes('proxy')) {
+      delete result.proxy;
+    }
+    if (!result.proxy && !result.cors) {
+      result.proxy = [];
+    }
+    return result;
+  } catch {
+    return { format: 'xswitch-next-group', version: 1, group: structuredClone(group) };
+  }
+}
+

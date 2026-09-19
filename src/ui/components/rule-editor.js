@@ -6,9 +6,9 @@ export function createRuleEditor({ rule, groupId, revision, save, cancel }) {
   const mode = el('select', { class: 'input' }, el('option', { value: 'contains' }, '包含'), el('option', { value: 'regex' }, '正则表达式'));
   mode.value = rule?.match?.mode ?? 'contains';
   const type = rule?.type ?? 'redirect';
-  const cors = el('input', { type: 'checkbox', checked: rule?.options?.cors ?? false, class: 'accent-indigo-600' });
-  const error = el('p', { class: 'text-xs leading-5 text-red-600 dark:text-red-400', role: 'alert' });
-  const form = el('form', { class: 'panel space-y-3 border-indigo-300 p-3 dark:border-indigo-800', 'aria-label': '规则编辑器' },
+  const cors = el('input', { type: 'checkbox', checked: rule?.options?.cors ?? false, class: 'accent-primary' });
+  const error = el('p', { class: 'text-xs leading-5 text-error', role: 'alert' });
+  const form = el('form', { class: 'panel space-y-3 border-primary/50 p-3 shadow-md', 'aria-label': '规则编辑器' },
     el('h3', { class: 'text-sm font-semibold' }, rule?.id ? '编辑规则' : `添加${type === 'redirect' ? '请求转发' : '允许跨域'}`),
     field('规则名称', name), field('匹配地址', source), field('匹配方式', mode));
   if (type === 'redirect') form.append(field('转发到', destination),

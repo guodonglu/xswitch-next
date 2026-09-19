@@ -38,26 +38,26 @@ function render() {
   if (!state) return;
   const focus = document.activeElement; const focusId = focus?.id; const start = focus?.selectionStart; const end = focus?.selectionEnd;
   const scroll = window.scrollY;
-  const header = el('header', { class: 'sticky top-0 z-10 border-b border-zinc-200 bg-white/95 px-4 py-4 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95' },
+  const header = el('header', { class: 'sticky top-0 z-10 border-b border-border bg-surface/95 px-4 py-4 backdrop-blur' },
     el('div', { class: 'flex items-center justify-between gap-3' },
-      el('div', { class: 'flex items-center gap-2.5' }, el('span', { class: 'flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white' }, icon('rules')),
+      el('div', { class: 'flex items-center gap-2.5' }, el('span', { class: 'flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white shadow-sm' }, icon('rules')),
         el('div', {}, el('h1', { class: 'text-sm font-semibold tracking-tight' }, 'XSwitch Next'), el('p', { class: 'muted mt-0.5 text-[10px]' }, 'REQUEST REDIRECT'))),
       el('div', { class: 'flex items-center gap-2 text-xs' }, el('span', {}, state.enabled ? '已启用' : '已停用'),
         toggle('总开关', state.enabled, (enabled) => ctx.guard(() => ctx.change('CONFIG_ENABLED', { enabled }))))),
     el('div', { class: 'muted mt-3 flex items-center justify-between text-[11px]' },
       el('span', {}, `${state.activeRuleCount} 条启用规则`), el('span', { id: 'save-status', role: 'status' }, ''),
-      button(`${state.agent?.connected ? '●' : '○'} Agent`, () => { ui.view = 'agent'; render(); }, 'border-0 bg-transparent p-0 text-[11px] dark:bg-transparent', { id: 'agent-status' })));
+      button(`${state.agent?.connected ? '●' : '○'} Agent`, () => { ui.view = 'agent'; render(); }, 'border-0 bg-transparent p-0 text-[11px]', { id: 'agent-status' })));
   const main = el('main', { class: 'space-y-4 p-4 pb-24', id: 'main-content' });
-  if (state.applyError) main.append(el('div', { class: 'panel border-red-300 p-3 text-xs leading-6 text-red-700 dark:text-red-300', role: 'alert' }, '规则无法应用：', state.applyError));
+  if (state.applyError) main.append(el('div', { class: 'panel border-error/50 bg-error/10 p-3 text-xs leading-6 text-error', role: 'alert' }, '规则无法应用：', state.applyError));
   if (ui.view === 'rules') main.append(rulesView(ctx));
   else if (ui.view === 'settings') main.append(settingsView(ctx));
   else if (ui.view === 'transfer') main.append(importExportView(ctx));
   else if (ui.view === 'agent') main.append(agentView(ctx));
   else main.append(el('h2', { class: 'font-semibold' }, ui.view === 'agent' ? 'AI Agent' : '导入导出'));
-  const nav = el('nav', { class: 'fixed inset-x-0 bottom-0 z-10 mx-auto grid max-w-2xl grid-cols-4 border-t border-zinc-200 bg-white px-2 py-2 dark:border-zinc-800 dark:bg-zinc-950', 'aria-label': '主导航' });
+  const nav = el('nav', { class: 'fixed inset-x-0 bottom-0 z-10 mx-auto grid max-w-2xl grid-cols-4 border-t border-border bg-surface/95 px-2 py-2 backdrop-blur', 'aria-label': '主导航' });
   for (const [value, label] of [['rules', '规则'], ['agent', 'Agent'], ['transfer', '导入导出'], ['settings', '设置']]) nav.append(
     button(el('span', { class: 'flex flex-col items-center gap-1' }, icon(value), el('span', {}, label)),
-      () => { ui.view = value; ui.editing = null; render(); }, `border-0 text-[11px] ${ui.view === value ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' : 'bg-transparent dark:bg-transparent'}`, { 'aria-current': ui.view === value ? 'page' : undefined }));
+      () => { ui.view = value; ui.editing = null; render(); }, `border-0 text-[11px] ${ui.view === value ? 'bg-primary-soft text-primary font-medium' : 'bg-transparent text-text-secondary hover:text-text-primary'}`, { 'aria-current': ui.view === value ? 'page' : undefined }));
   app.replaceChildren(el('div', { class: 'mx-auto min-h-screen max-w-2xl' }, header, main, nav));
   if (focusId) { const target = document.getElementById(focusId); target?.focus({ preventScroll: true }); if (start !== null && start !== undefined && target?.setSelectionRange) target.setSelectionRange(start, end); }
   if (ui.editing && document.activeElement === document.body) document.querySelector('[aria-label="规则编辑器"] input')?.focus({ preventScroll: true });

@@ -125,6 +125,20 @@ export const USE_CHROME_STORAGE_SYNC_FN = false;
  */
 export const SYNC_STORAGE_DATA_HAS_BEEN_MIGARATED_TO_LOCAL = 'sync_storage_data_has_been_migarated_to_local';
 
-export const BLUE_ICON_PATH = 'images/blue_128.png';
-export const GREY_ICON_PATH = 'images/grey_128.png';
+export const ACTIVE_ICON_PATH = {
+  16: 'images/icon_16.png',
+  32: 'images/icon_32.png',
+  48: 'images/icon_48.png',
+  128: 'images/icon_128.png',
+};
+
+export const DISABLED_ICON_PATH = {
+  16: 'images/icon_16_disabled.png',
+  32: 'images/icon_32_disabled.png',
+  48: 'images/icon_48_disabled.png',
+  128: 'images/icon_128_disabled.png',
+};
+
+export const BLUE_ICON_PATH = ACTIVE_ICON_PATH;
+export const GREY_ICON_PATH = DISABLED_ICON_PATH;
 export const DARK_MODE_MEDIA = '(prefers-color-scheme: dark)';

@@ -1,17 +1,155 @@
 @import 'tailwindcss';
+
+:root,
+html:not(.dark) {
+  --background: #f4f5f7;
+
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-hover: #eaecee;
+
+  --border: #e2e5e9;
+  --border-strong: #cbd0d6;
+
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #8b949e;
+
+  --primary: #272b34;
+  --primary-foreground: #ffffff;
+  --primary-hover: #373d49;
+  --primary-active: #111317;
+  --primary-soft: #e8eaee;
+
+  --success: #16a34a;
+  --warning: #d97706;
+  --error: #dc2626;
+  --info: #2563eb;
+}
+
+.dark {
+  --background: #121418;
+
+  --surface: #1a1d24;
+  --surface-elevated: #22262f;
+  --surface-hover: #2a2f3a;
+
+  --border: #2e3440;
+  --border-strong: #3f4756;
+
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+
+  --primary: #f3f4f6;
+  --primary-foreground: #111827;
+  --primary-hover: #ffffff;
+  --primary-active: #e5e7eb;
+  --primary-soft: #252a34;
+
+  --success: #48a868;
+  --warning: #d39a3a;
+  --error: #d84a52;
+  --info: #568ac7;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-muted: var(--text-muted);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-soft: var(--primary-soft);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+}
+
 @layer base {
-  html { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  body { @apply m-0 bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
-  button, input, select, summary { @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500; }
-  button { @apply cursor-pointer disabled:cursor-wait disabled:opacity-50; }
+  html {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    margin: 0;
+  }
+  button, input, select, summary {
+    outline-color: var(--primary);
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2;
+  }
+  button {
+    @apply cursor-pointer disabled:cursor-wait disabled:opacity-50;
+  }
 }
+
 @layer components {
-  #toasts { @apply fixed inset-x-3 bottom-20 z-50 mx-auto flex max-w-lg flex-col gap-2; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium transition-colors duration-150 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800; }
-  .btn-primary { @apply border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700 dark:border-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-600; }
-  .input { @apply w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900; }
-  .panel { @apply rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900; }
-  .muted { @apply text-zinc-500 dark:text-zinc-400; }
+  #toasts {
+    @apply fixed inset-x-3 bottom-20 z-50 mx-auto flex max-w-lg flex-col gap-2;
+  }
+  .btn {
+    border-color: var(--border);
+    background-color: var(--surface-elevated);
+    color: var(--text-primary);
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors duration-150;
+  }
+  .btn:hover {
+    background-color: var(--surface-hover);
+  }
+  .btn-primary {
+    border-color: var(--primary);
+    background-color: var(--primary);
+    color: var(--primary-foreground, #ffffff);
+  }
+  .btn-primary:hover {
+    border-color: var(--primary-hover);
+    background-color: var(--primary-hover);
+  }
+  .btn-primary:active {
+    border-color: var(--primary-active);
+    background-color: var(--primary-active);
+  }
+  .input {
+    border-color: var(--border);
+    background-color: var(--surface);
+    color: var(--text-primary);
+    @apply w-full min-w-0 rounded-lg border px-3 py-2 text-sm;
+  }
+  .input:focus {
+    border-color: var(--border-strong);
+  }
+  .panel {
+    border-color: var(--border);
+    background-color: var(--surface);
+    @apply rounded-xl border;
+  }
+  .muted {
+    color: var(--text-muted);
+  }
 }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0ms !important; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0ms !important;
+  }
+}
